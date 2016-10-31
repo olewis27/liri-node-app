@@ -1,65 +1,57 @@
-//Global variables
-var twitter = require('twitter');
-var twitterKeys = require('keys.js').twitterKeys;
-// var spotify = require('spotify');
-// var request = require('request');
-// Load the fs package to read and write
-var fs = require('fs');
-// Take user input for action
-var direct = process.argv[2];
-// //User input for movie-this and spotify-this-song
-// var parameter = process.argv[3]
 
-//Switch to determine action to take
-switch(direct){
-	//This will show your last 20 tweets and when they were created at in your terminal/bash window.
-	case 'my-tweets':
-    {
-        myTweets();
-    }
-    //     break;
-    // case 'spotify-this-song':
-    // {
-    //     var song = process.argv[3];
-    //     spotifyThisSong(song);
-    // }
-    //     break;
-    // case 'movie-this':
-    // {
-    //     var movie = process.argv[3];
-    //     movieThis(movie);
-    // }
-    //     break;
-    // case 'do-what-it-says':
-    // {
+var command = process.argv[2];
+var parameter = process.argv[3];
+console.log("Command: " + command)
+var runProgram = function(command, parameter){
+	switch(command){
+		case 'my-tweets':
+			var Twitter = require("twitter");
+			var twitterKeys = require("./keys.js").twitterKeys;
+			var client = new Twitter(twitterKeys);
+			console.log('Getting my Tweets starting with the most recent');
+			var params = {screen_name: 'c0ding0mar'};
+			client.get('statuses/user_timeline', params, function(error, tweets, response) {
+				if (!error) {
+					for(var i = 0; i<tweets.length; i++)
+						console.log("Tweet " + parseInt(i+1) + ": " + tweets[i].text);
+				}
+			});
+		break;
+		case 'spotify-this-song':
+			var spotify = require("spotify");
+			var song = parameter === 'undefined' ? 'Never gonna give you up' : parameter;
+			console.log("Spotifying Song: '" + song + "'");
+			spotify.search({ type: 'track', query: song }, function(err, data) {
+			    if ( err ) {
+			        console.log('Error occurred: ' + err);
+			        return;
+			    }
+			    data = data.tracks.items[0];
+
+			    console.log("Artist: " + data.artists[0].name);
+			    console.log("Song: " + data.name);
+			    console.log("Preview Link: " + data.preview_url);
+			    console.log("Album: " + data.album.name);
+			});
+		break;
+		case 'movie-this':
+			var request = require("request");
+			var movie = parameter;
+			console.log("Movie: " + movie);
+			request('http://www.omdbapi.com/?t=' + movie + '&y=&plot=short&r=json', function (error, response, body) {
+				if (!error && response.statusCode == 200) {
+					console.log(body)
+				} else {
+					console.warn(error);
+	  			}
+			});
+		break;
+		case 'do-what-it-says':
+			fs = require('fs');
+			fs.readFile('./random.txt', 'UTF-8', function(err, data){
+				runProgram(data.split(' ')[0], data.split(' ')[1])
+			});
+		break;
+	}
 }
-//Twitter API client library for node.js -- npm install twitter
-function myTweets(){
-	// var twitter = require('twitter');
-	//Grab the keys.js info
-	//Set client to key grabbed
-	var client = new twitter(twitterKeys);
-
-	//Set my screen_name and number of tweets to pull
-	var params = {screen_name: 'deny_us_not', count: 10};
-
-	//Get timeline info
-	client.get('statuses/user_timeline', params, function(error, tweets) {
-
-	 	//If an error occurs
-	 	if (error) {
-		    console.log('Error occurred: ' + error);
-		    return;
-		}
-
-	 	//If no error occurs
-	 	if (!error) {
-
-			//Display ten current tweets
-			for (var i = 0; i < tweets.length; i++) {
-				console.log((parseInt([i]) + 1) + '. ' + tweets[i].text);
-			}
-		}
-	});
-
-}
+runProgram(command, parameter);
